@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 	"image"
-	_ "image/png"
+	"image/color"
+	"image/png"
 	"log"
 )
 
@@ -29,20 +30,67 @@ func main() {
 	}
 	bounds := m.Bounds()
 
-	m := image.NewRGBA(bounds)
-	color := new(color.RGBA)
+	newm := image.NewRGBA(bounds)
+	c := new(color.RGBA)
+	c.A = 255
+
+	dev := uint32(30)
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 	    for x := bounds.Min.X; x < bounds.Max.X; x++ {
-	        r, g, b, a := m.At(x, y).RGBA()
-	        // A color's RGBA method returns values in the range [0, 65535].
-	        // Shifting by 12 reduces this to the range [0, 15].
-	        histogram[r>>12][0]++
-	        histogram[g>>12][1]++
-	        histogram[b>>12][2]++
-	        histogram[a>>12][3]++
+
+	    	var r, g, b, ct uint32
+
+			_r, _g, _b, _ := m.At(x,y).RGBA()
+
+	    	for i := -6; i < 7; i++ {
+	    		for j := -6; j < 7; j++ {
+	    			rt, gt, bt, _ := m.At(x+i,y+j).RGBA()
+
+	    			if uint32(rt-_r) > dev  || uint32(gt-_g) > dev || uint32(bt-_b) > dev {
+	    				continue
+	    			}
+
+	    			rt >>= 8
+	    			gt >>= 8
+	    			bt >>= 8
+
+	    			r += rt
+	    			g += gt
+	    			b += bt
+	    			ct++
+	    		}
+	    	}
+	    	c.R = uint8(r/ct)
+	    	c.G = uint8(g/ct)
+	    	c.B = uint8(b/ct)
+
+	    	// r, g, b, a := m.At(x, y).RGBA()
+
+	    	newm.Set(x,y, c)
+
 	    }
 	}
 
-	fmt.Printf("%#v\n",bounds)
+	toimg, _ := os.Create("output.png")
+	defer toimg.Close()
+
+	err = png.Encode(toimg, newm)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+
+	fmt.Println("done")
 }
+
+
+
+
+
+
+
+
+
+
+
