@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	_ "image/jpeg"
 	"log"
 )
 
@@ -30,52 +31,53 @@ func main() {
 	}
 	bounds := m.Bounds()
 
-	newm := image.NewRGBA(bounds)
 	c := new(color.RGBA)
 	c.A = 255
 
-	dev := uint32(30)
+	dev := uint16(36<<8)
 
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-	    for x := bounds.Min.X; x < bounds.Max.X; x++ {
+	for i := 0; i < 1; i++ {
+		newm := image.NewRGBA(bounds)
 
-	    	var r, g, b, ct uint32
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		    for x := bounds.Min.X; x < bounds.Max.X; x++ {
 
-			_r, _g, _b, _ := m.At(x,y).RGBA()
+		    	var r, g, b, ct uint32
 
-	    	for i := -6; i < 7; i++ {
-	    		for j := -6; j < 7; j++ {
-	    			rt, gt, bt, _ := m.At(x+i,y+j).RGBA()
+				_r, _g, _b, _ := m.At(x,y).RGBA()
 
-	    			if uint32(rt-_r) > dev  || uint32(gt-_g) > dev || uint32(bt-_b) > dev {
-	    				continue
-	    			}
+		    	for i :=-1; i < 2; i++ {
+		    		for j := -1; j < 2; j++ {
+		    			rt, gt, bt, _ := m.At(x+i,y+j).RGBA()
 
-	    			rt >>= 8
-	    			gt >>= 8
-	    			bt >>= 8
+		    			if uint16(rt-_r) > dev  || uint16(gt-_g) > dev || uint16(bt-_b) > dev {
+		    				continue
+		    			}
 
-	    			r += rt
-	    			g += gt
-	    			b += bt
-	    			ct++
-	    		}
-	    	}
-	    	c.R = uint8(r/ct)
-	    	c.G = uint8(g/ct)
-	    	c.B = uint8(b/ct)
+		    			r += rt
+		    			g += gt
+		    			b += bt
+		    			ct++
+		    		}
+		    	}
+		    	c.R = uint8((r/ct)>>8)
+		    	c.G = uint8((g/ct)>>8)
+		    	c.B = uint8((b/ct)>>8)
 
-	    	// r, g, b, a := m.At(x, y).RGBA()
+		    	// r, g, b, a := m.At(x, y).RGBA()
 
-	    	newm.Set(x,y, c)
+		    	newm.Set(x,y, c)
 
-	    }
+		    }
+		}
+
+		m = newm
 	}
 
-	toimg, _ := os.Create("output.png")
-	defer toimg.Close()
+	outfile, _ := os.Create("output.png")
+	defer outfile.Close()
 
-	err = png.Encode(toimg, newm)
+	err = png.Encode(outfile, m)
 	if err != nil {
 		log.Fatal(err)
 	}
