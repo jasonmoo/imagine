@@ -60,11 +60,25 @@ func featurize(orig image.Image) (m image.Image) {
 
 	// array of features
 	// feature is an array of arrays [x,y]
-	var features [][][]uint8
+	var features [][][2]uint8
+	feature_i := 0
 
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 	    for x := bounds.Min.X; x < bounds.Max.X; x++ {
+
+	    	
+
+	    	// skip if already processed
+	    	if ex[x][y] == true {
+	    		continue
+	    	}
+	    	ex[x][y] = true
+
+	    	pixel_i := 0
+
+	    	// add this pixel to the current feature set
+	    	features[feature_i][pixel_i++] = []uint8{x,y}
 
 	    	var r, g, b, ct uint32
 
