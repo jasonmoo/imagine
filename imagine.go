@@ -30,8 +30,8 @@ func main() {
 	    log.Fatal(err)
 	}
 
-	m = blend(m)
 	m = featurize(m)
+	// m = blend(m)
 
 	outfile, _ := os.Create("output.png")
 	defer outfile.Close()
@@ -52,7 +52,7 @@ func main() {
 func featurize(orig image.Image) (image.Image) {
 
 	// deviation range
-	color_dev := uint16(8<<8)
+	color_dev := uint16(20<<8)
 	feature_dev := 4
 
 	bounds := orig.Bounds()
@@ -128,14 +128,14 @@ func featurize(orig image.Image) (image.Image) {
 		// average all pixel colors in it
 		// and set all pixels to that color
 		if len(features[f]) > feature_dev {
-			var r, g, b, ct uint32
+			var r, g, b, ct uint64
 
 			for p := 0; p < len(features[f]); p++  {
 				rt, gt, bt, _ := orig.At(features[f][p][0], features[f][p][1]).RGBA()
 
-				r += rt
-				g += gt
-				b += bt
+				r += uint64(rt)
+				g += uint64(gt)
+				b += uint64(bt)
 				ct++
 			}
 			c.R = uint8((r/ct)>>8)
@@ -163,7 +163,7 @@ func featurize(orig image.Image) (image.Image) {
 
 func blend(orig image.Image) (m image.Image) {
 	// deviation range
-	dev := uint16(36<<8)
+	dev := uint16(50<<8)
 
 	c := new(color.RGBA)
 	c.A = 255
@@ -171,7 +171,7 @@ func blend(orig image.Image) (m image.Image) {
 	bounds := orig.Bounds()
 
 	// iterations
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 10; i++ {
 		newm := image.NewRGBA(bounds)
 
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
