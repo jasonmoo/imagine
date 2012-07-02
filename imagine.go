@@ -30,8 +30,8 @@ func main() {
 	    log.Fatal(err)
 	}
 
+	m = blend(m)
 	m = featurize(m)
-	// m = blend(m)
 
 	outfile, _ := os.Create("output.png")
 	defer outfile.Close()
@@ -47,13 +47,13 @@ func main() {
 
 // for some reason required to make anonymous
 // functions able to call themselves
-// type discover func(x int, y, int) (nil)
+// type discoverer func(x int, y, int) 
 
 func featurize(orig image.Image) (image.Image) {
 
 	// deviation range
-	color_dev := uint16(50<<8)
-	feature_dev := 10
+	color_dev := uint16(8<<8)
+	feature_dev := 4
 
 	bounds := orig.Bounds()
 
@@ -73,10 +73,8 @@ func featurize(orig image.Image) (image.Image) {
 	// recursively investigate all neighbors of supplied pixel
 	// and build feature arrays
 	// some shenanigans to make anonymous functions recurisively callable
-	discover := func(x int,y int) {}
-	f := func(x int,y int) {
-
-		fmt.Println(feature_i)
+	var discover func(x int,y int)
+	discover = func(x int,y int) {
 
 		// add this pixel to the current feature
 		features[feature_i] = append(features[feature_i], [2]int{x,y})
@@ -87,14 +85,12 @@ func featurize(orig image.Image) (image.Image) {
 		_r, _g, _b, _ := orig.At(x,y).RGBA()
 
 		for i := -1; i < 2; i++ {
-			for j := -1; i < 2; i++ {
+			for j := -1; j < 2; j++ {
 				xx, yy := x+i, y+j
 				// check if it's within our bounds and if it's been processed already
 				if xx < 0 || yy < 0 || xx > bounds.Max.X || yy > bounds.Max.Y || ex[xx][yy] == true {
 					continue
 				}
-
-				fmt.Println("here")
 				rt, gt, bt, _ := orig.At(xx,yy).RGBA()
 				// check the color range against our deviation spec
 				if uint16(rt-_r) > color_dev || uint16(gt-_g) > color_dev || uint16(bt-_b) > color_dev {
@@ -105,27 +101,22 @@ func featurize(orig image.Image) (image.Image) {
 		}
 
 	}
-	discover = f
 
 	// run through each pixel and build features
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 	    for x := bounds.Min.X; x < bounds.Max.X; x++ {
-
-	    	fmt.Println(ex[x][y])
 
 	    	// skip if already processed
 	    	if ex[x][y] == true {
 	    		continue
 	    	}
 
-	    	fmt.Println(x,y)
+	    	// fmt.Println(x,y)
 	    	features = append(features, [][2]int{})
 	    	discover(x,y)
 	    	feature_i++
-
 	    }
 	}
-    fmt.Println(features)
 
 	newm := image.NewRGBA(bounds)
 	c := new(color.RGBA)
